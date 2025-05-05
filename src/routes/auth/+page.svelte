@@ -330,7 +330,7 @@
 										         on:click={loadCaptcha} />
 										    <input bind:value={captchaInput}
 										           type="text"
-										           class="my-0.5 w-full text-sm outline-hidden bg-transparent"
+										           class="flex-grow my-0.5 w-full text-sm outline-hidden bg-transparent border rounded px-2 py-1.5"
 										           placeholder="图形验证码"
 										           required />
 										  </div>
@@ -339,10 +339,10 @@
 										  <div class="flex items-center space-x-2 mb-2">
 										    <input bind:value={emailCode}
 										           type="text"
-										           class="my-0.5 w-full text-sm outline-hidden bg-transparent"
+										           class="flex-grow my-0.5 w-full text-sm outline-hidden bg-transparent border rounded px-2 py-1.5"
 										           placeholder="邮箱验证码"
 										           required />
-										    <button class="btn btn-sm btn-primary"
+										    <button class="btn btn-sm btn-primary flex-shrink-0"
 										            type="button"
 										            on:click={sendEmailCode}>
 										      发送
