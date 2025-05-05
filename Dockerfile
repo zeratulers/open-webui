@@ -25,7 +25,7 @@ FROM --platform=$BUILDPLATFORM node:22-alpine3.20 AS build
 ARG BUILD_HASH
 
 WORKDIR /app
-
+ENV NODE_OPTIONS="--max-old-space-size=4096"
 COPY package.json package-lock.json ./
 RUN npm ci
 
