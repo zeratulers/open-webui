@@ -127,7 +127,16 @@ async def get_session_user(
 # Update Profile
 ############################
 
-
+@router.post("/auth/send_email_code")
+async def send_email_code(request: Request, email: str, captcha_code: str):
+    # 1. 校验 captcha_code 是否正确（需本地存储/redis）
+    # 2. 生成验证码
+    code = generate_code()
+    store_email_code(email, code)
+    # 3. 发送邮件
+    send_verification_email(email, code)
+    return {"success": True}
+    
 @router.post("/update/profile", response_model=UserResponse)
 async def update_profile(
     form_data: UpdateProfileForm, session_user=Depends(get_verified_user)
