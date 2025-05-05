@@ -45,13 +45,29 @@
 	        captcha_token: captchaToken,
 	        captcha_code : captchaInput
 	    };
-	    const r = await fetch(`${WEBUI_API_BASE_URL}/auths/send_email_code`, {
-	        method : 'POST',
-	        headers: { 'Content-Type': 'application/json' },
-	        body   : JSON.stringify(body)
-	    });
-	    r.ok ? toast.success('验证码已发送，请查收邮件')
-	         : toast.error('发送失败，请检查验证码或邮箱');
+	    
+	    try {
+	        const r = await fetch(`${WEBUI_API_BASE_URL}/auths/send_email_code`, {
+	            method : 'POST',
+	            headers: { 'Content-Type': 'application/json' },
+	            body   : JSON.stringify(body)
+	        });
+
+	        if (!r.ok) {
+	            const errorData = await r.json().catch(() => null); // Try to parse error JSON
+	            if (errorData?.detail === 'Captcha invalid') {
+	                toast.error('图形验证码错误或已过期');
+	                loadCaptcha(); // Refresh captcha on invalid captcha error
+	            } else {
+	                toast.error(errorData?.detail || '发送失败，请检查验证码或邮箱');
+	            }
+	        } else {
+	            toast.success('验证码已发送，请查收邮件');
+	        }
+	    } catch (e) {
+	        console.error("Error sending email code:", e);
+	        toast.error('发送邮件验证码时出错');
+	    }
 	}
 	/* ------------------------------------------------- */
 	let mode = $config?.features.enable_ldap ? 'ldap' : 'signin';
@@ -104,6 +120,7 @@
 			  ).catch(
 			(error) => {
 				toast.error(`${error}`);
+				loadCaptcha(); // Reload captcha on signup error
 				return null;
 			}
 		);

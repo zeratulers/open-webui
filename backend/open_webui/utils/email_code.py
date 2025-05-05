@@ -1,5 +1,8 @@
 import os, random, string, time
+import logging
 from typing import Dict, Tuple
+
+log = logging.getLogger(__name__)
 
 _EMAIL_CODE_STORE: Dict[str, Tuple[str, float]] = {}
 _EXPIRE_SEC = int(os.getenv("EMAIL_CODE_EXPIRE", 600))
@@ -10,6 +13,7 @@ def _gen_code(n: int = 6) -> str:
 def store_email_code(email: str) -> str:
     code = _gen_code()
     _EMAIL_CODE_STORE[email] = (code, time.time() + _EXPIRE_SEC)
+    log.info(f"[DEBUG] Stored email code '{code}' for email '{email}'")
     return code
 
 def verify_email_code(email: str, code: str) -> bool:
