@@ -51,25 +51,22 @@ class JSONField(types.TypeDecorator):
 # Workaround to handle the peewee migration
 # This is required to ensure the peewee migration is handled before the alembic migration
 def handle_peewee_migration(DATABASE_URL):
-    # db = None
+    db = None  # 显式初始化
     try:
-        # Replace the postgresql:// with postgres:// to handle the peewee migration
+        # 替换 URI 前缀，Peewee 只接受 postgres:// 而不是 postgresql://
         db = register_connection(DATABASE_URL.replace("postgresql://", "postgres://"))
         migrate_dir = OPEN_WEBUI_DIR / "internal" / "migrations"
         router = Router(db, logger=log, migrate_dir=migrate_dir)
         router.run()
-        db.close()
-
     except Exception as e:
         log.error(f"Failed to initialize the database connection: {e}")
         raise
     finally:
-        # Properly closing the database connection
+        # 安全关闭连接
         if db and not db.is_closed():
             db.close()
-
-        # Assert if db connection has been closed
-        assert db.is_closed(), "Database connection is still open."
+        if db:
+            assert db.is_closed(), "Database connection is still open."
 
 
 handle_peewee_migration(DATABASE_URL)
