@@ -129,7 +129,7 @@ async def get_session_user(
 
 
 # -------- 1. 生成图形验证码 ----------
-@router.get("/auth/captcha")
+@router.get("/captcha")
 async def get_captcha():
     token, img_b64 = create_captcha()
     return {"token": token, "image": img_b64}
@@ -140,7 +140,7 @@ class SendEmailBody(BaseModel):
     captcha_code: str
 
 # -------- 2. 发送邮箱验证码 ----------
-@router.post("/auth/send_email_code")
+@router.post("/send_email_code")
 async def send_email_code(body: SendEmailBody):
     if not verify_captcha(body.captcha_token, body.captcha_code):
         raise HTTPException(status_code=400, detail="Captcha invalid")
@@ -154,7 +154,7 @@ class RegisterBody(BaseModel):
     password: str
     email_code: str
 
-@router.post("/auth/register")
+@router.post("//register")
 async def register_user(body: RegisterBody):
     if not verify_email_code(body.email, body.email_code):
         raise HTTPException(status_code=400, detail="Invalid email code")
