@@ -123,20 +123,38 @@ async def get_session_user(
     }
 
 
-############################
-# Update Profile
-############################
 
+# -------- 1. 生成图形验证码 ----------
+@router.get("/auth/captcha")
+async def get_captcha():
+    token, img_b64 = create_captcha()
+    return {"token": token, "image": img_b64}
+
+class SendEmailBody(BaseModel):
+    email: EmailStr
+    captcha_token: str
+    captcha_code: str
+
+# -------- 2. 发送邮箱验证码 ----------
 @router.post("/auth/send_email_code")
-async def send_email_code(request: Request, email: str, captcha_code: str):
-    # 1. 校验 captcha_code 是否正确（需本地存储/redis）
-    # 2. 生成验证码
-    code = generate_code()
-    store_email_code(email, code)
-    # 3. 发送邮件
-    send_verification_email(email, code)
+async def send_email_code(body: SendEmailBody):
+    if not verify_captcha(body.captcha_token, body.captcha_code):
+        raise HTTPException(status_code=400, detail="Captcha invalid")
+    code = store_email_code(body.email)
+    send_verification_email(body.email, code)
     return {"success": True}
-    
+
+# -------- 3. 注册 ----------
+class RegisterBody(BaseModel):
+    email: EmailStr
+    password: str
+    email_code: str
+
+@router.post("/auth/register")
+async def register_user(body: RegisterBody):
+    if not verify_email_code(body.email, body.email_code):
+        raise HTTPException(status_code=400, detail="Invalid email code")
+    # 之后沿用原有创建用户逻辑
 @router.post("/update/profile", response_model=UserResponse)
 async def update_profile(
     form_data: UpdateProfileForm, session_user=Depends(get_verified_user)
