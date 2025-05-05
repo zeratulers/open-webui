@@ -138,7 +138,7 @@ COPY --chown=$UID:$GID --from=build /app/build /app/build
 COPY --chown=$UID:$GID --from=build /app/CHANGELOG.md /app/CHANGELOG.md
 COPY --chown=$UID:$GID --from=build /app/CHANGELOG_EXTRA.md /app/CHANGELOG_EXTRA.md
 COPY --chown=$UID:$GID --from=build /app/package.json /app/package.json
-
+RUN apt update && apt install -y ffmpeg
 # copy backend files
 COPY --chown=$UID:$GID ./backend .
 
