@@ -399,6 +399,7 @@
 													on:click={() => {
 														if (mode === 'signin') {
 															mode = 'signup';
+															loadCaptcha();
 														} else {
 															mode = 'signin';
 														}

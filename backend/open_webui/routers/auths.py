@@ -484,6 +484,10 @@ async def signup(request: Request, response: Response, form_data: SignupForm):
                 status.HTTP_403_FORBIDDEN, detail=ERROR_MESSAGES.ACCESS_PROHIBITED
             )
 
+    # Verify email code first
+    if not verify_email_code(form_data.email.lower(), form_data.email_code):
+        raise HTTPException(status_code=400, detail=ERROR_MESSAGES.INVALID_EMAIL_CODE)
+
     user_count = Users.get_num_users()
     if not validate_email_format(form_data.email.lower()):
         raise HTTPException(
