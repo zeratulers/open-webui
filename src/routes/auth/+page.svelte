@@ -26,7 +26,7 @@
 	let emailCode    = '';
 	
 	async function loadCaptcha() {
-	    const r = await fetch('/auth/captcha');
+	    const r = await fetch(`${WEBUI_API_BASE_URL}/captcha`);
 	    if (r.ok) {
 	        const { token, image } = await r.json();
 	        captchaToken = token;
@@ -45,7 +45,7 @@
 	        captcha_token: captchaToken,
 	        captcha_code : captchaInput
 	    };
-	    const r = await fetch('/auth/send_email_code', {
+	    const r = await fetch('${WEBUI_API_BASE_URL}/send_email_code', {
 	        method : 'POST',
 	        headers: { 'Content-Type': 'application/json' },
 	        body   : JSON.stringify(body)
