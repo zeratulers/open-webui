@@ -34,7 +34,8 @@ from open_webui.env import (
 )
 from fastapi import APIRouter, Depends, HTTPException, Request, status
 from pydantic import BaseModel, EmailStr
-from open_webui.utils.email import send_verification_email, store_email_code, verify_email_code
+from open_webui.utils.email import send_verification_email
+from open_webui.utils.email_code import store_email_code, verify_email_code
 from open_webui.utils.captcha import create_captcha, verify_captcha
 from fastapi.responses import RedirectResponse, Response
 from open_webui.config import OPENID_PROVIDER_URL, ENABLE_OAUTH_SIGNUP, ENABLE_LDAP
