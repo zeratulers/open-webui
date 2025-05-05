@@ -19,7 +19,41 @@
 	const i18n = getContext('i18n');
 
 	let loaded = false;
-
+	/* ---------- ①  图形验证码 & 邮箱验证码  ---------- */
+	let captchaToken = '';
+	let captchaImg   = '';
+	let captchaInput = '';
+	let emailCode    = '';
+	
+	async function loadCaptcha() {
+	    const r = await fetch('/auth/captcha');
+	    if (r.ok) {
+	        const { token, image } = await r.json();
+	        captchaToken = token;
+	        captchaImg   = image;
+	        captchaInput = '';
+	    }
+	}
+	
+	async function sendEmailCode() {
+	    if (!email || !captchaInput) {
+	        toast.error('请填写邮箱和图形验证码');
+	        return;
+	    }
+	    const body = {
+	        email,
+	        captcha_token: captchaToken,
+	        captcha_code : captchaInput
+	    };
+	    const r = await fetch('/auth/send_email_code', {
+	        method : 'POST',
+	        headers: { 'Content-Type': 'application/json' },
+	        body   : JSON.stringify(body)
+	    });
+	    r.ok ? toast.success('验证码已发送，请查收邮件')
+	         : toast.error('发送失败，请检查验证码或邮箱');
+	}
+	/* ------------------------------------------------- */
 	let mode = $config?.features.enable_ldap ? 'ldap' : 'signin';
 
 	let name = '';
