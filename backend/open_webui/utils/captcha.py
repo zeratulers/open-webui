@@ -1,4 +1,5 @@
 import io, os, time, random, string
+import base64
 from captcha.image import ImageCaptcha
 from typing import Dict, Tuple
 
@@ -16,7 +17,9 @@ def create_captcha() -> Tuple[str, str]:
     img = ImageCaptcha(width=200, height=60)
     buf = io.BytesIO()
     img.write(code, buf)
-    b64 = "data:image/png;base64," + buf.getvalue().encode("base64").decode()
+    b64_bytes = base64.b64encode(buf.getvalue())
+    b64_string = b64_bytes.decode('utf-8')
+    b64 = "data:image/png;base64," + b64_string
     return token, b64
 
 def verify_captcha(token: str, user_code: str) -> bool:
