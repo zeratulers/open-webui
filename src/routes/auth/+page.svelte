@@ -95,7 +95,13 @@
 	};
 
 	const signUpHandler = async () => {
-		const sessionUser = await userSignUp(name, email, password, generateInitialsImage(name)).catch(
+		const sessionUser = await userSignUp(
+			    name,
+			    email,
+			    password,
+			    generateInitialsImage(name),
+			    emailCode                // ← 新增：邮箱验证码
+			  ).catch(
 			(error) => {
 				toast.error(`${error}`);
 				return null;
@@ -178,7 +184,7 @@
 			goto(redirectPath);
 		}
 		await checkOauthCallback();
-
+		await loadCaptcha();
 		loaded = true;
 		setLogoImage();
 
@@ -316,6 +322,33 @@
 												required
 											/>
 										</div>
+										{#if mode === 'signup'}
+										  <div class="flex items-center space-x-2 mb-2">
+										    <img src={captchaImg}
+										         alt="captcha"
+										         class="h-12 cursor-pointer rounded border"
+										         on:click={loadCaptcha} />
+										    <input bind:value={captchaInput}
+										           type="text"
+										           class="my-0.5 w-full text-sm outline-hidden bg-transparent"
+										           placeholder="图形验证码"
+										           required />
+										  </div>
+										
+										  <!-- 邮箱验证码 -->
+										  <div class="flex items-center space-x-2 mb-2">
+										    <input bind:value={emailCode}
+										           type="text"
+										           class="my-0.5 w-full text-sm outline-hidden bg-transparent"
+										           placeholder="邮箱验证码"
+										           required />
+										    <button class="btn btn-sm btn-primary"
+										            type="button"
+										            on:click={sendEmailCode}>
+										      发送
+										    </button>
+										  </div>
+										{/if}
 									{/if}
 
 									<div>
