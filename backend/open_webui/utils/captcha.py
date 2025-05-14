@@ -6,7 +6,7 @@ from typing import Dict, Tuple
 _CAPTCHA_STORE: Dict[str, Tuple[str, float]] = {}
 _EXPIRE_SEC = int(os.getenv("CAPTCHA_EXPIRE", 300))
 
-def _gen_code(n: int = 5) -> str:
+def _gen_code(n: int = 4) -> str:
     return "".join(random.choices(string.ascii_uppercase + string.digits, k=n))
 
 def create_captcha() -> Tuple[str, str]:
