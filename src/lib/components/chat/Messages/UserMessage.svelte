@@ -100,7 +100,7 @@
 	}}
 />
 
-<div class="flex w-full status-description" id="message-{messageId}" dir={$settings.chatDirection}>
+<div class="flex w-full" id="message-{messageId}" dir={$settings.chatDirection}>
 	{#if !($settings?.chatBubble ?? true)}
 		<div class={`shrink-0 ltr:mr-3 rtl:ml-3`}>
 			<ProfileImage

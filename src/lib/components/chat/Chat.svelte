@@ -170,7 +170,6 @@
 					} catch (e) {}
 				}
 
-				await new Promise(resolve => setTimeout(resolve, 300)); // 短暂延迟确保动画效果
 				chatLoading = false;
 				loading = false;
 				window.setTimeout(() => scrollToBottom(), 0);
@@ -1972,7 +1971,7 @@
 			/>
 		{/if}
 
-		<PaneGroup direction="horizontal" class="w-full h-full expand-animation">
+		<PaneGroup direction="horizontal" class="w-full h-full">
 			<Pane defaultSize={50} class="h-full flex relative max-w-full flex-col">
 				<Navbar
 					bind:this={navbarElement}

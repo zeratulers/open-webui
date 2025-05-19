@@ -583,7 +583,7 @@
 
 {#key message.id}
 	<div
-		class=" flex w-full message-{message.id} status-description"
+		class=" flex w-full message-{message.id}"
 		id="message-{message.id}"
 		dir={$settings.chatDirection}
 	>

@@ -7,6 +7,12 @@
 		stiffness: 0.05
 	});
 
+	// 添加后端连接状态变量
+	let backendConnecting = true;
+	let backendConnectionError = false;
+	let connectionAttempts = 0;
+	let maxConnectionAttempts = 3;
+
 	import { onMount, tick, setContext } from 'svelte';
 	import {
 		config,
@@ -47,6 +53,9 @@
 	import NotificationToast from '$lib/components/NotificationToast.svelte';
 	import AppSidebar from '$lib/components/app/AppSidebar.svelte';
 	import { chatCompletion } from '$lib/apis/openai';
+	
+	// 导入加载动画组件
+	import { Loader } from 'lucide-svelte';
 
 	setContext('i18n', i18n);
 
@@ -55,6 +64,92 @@
 	let loaded = false;
 
 	const BREAKPOINT = 768;
+
+	// 连接后端函数，添加超时和重试逻辑
+	const connectToBackend = async () => {
+		backendConnecting = true;
+		backendConnectionError = false;
+		connectionAttempts = 0;
+		
+		const attemptConnection = async () => {
+			try {
+				connectionAttempts++;
+				loadingProgress.set(20 * connectionAttempts); // 设置加载进度，最大到60%
+				
+				// 设置超时
+				const timeoutPromise = new Promise((_, reject) => {
+					setTimeout(() => reject(new Error('Backend connection timeout')), 10000);
+				});
+				
+				// 尝试获取后端配置
+				const configPromise = getBackendConfig();
+				const backendConfig = await Promise.race([configPromise, timeoutPromise]);
+				
+				console.log('Backend config:', backendConfig);
+				
+				// 如果成功获取配置
+				if (backendConfig) {
+					loadingProgress.set(80); // 设置进度为80%
+					
+					// 保存后端状态到Store
+					await config.set(backendConfig);
+					await WEBUI_NAME.set(backendConfig.name);
+					
+					// 设置WebSocket
+					if ($config) {
+						await setupSocket($config.features?.enable_websocket ?? true);
+						
+						const currentUrl = `${window.location.pathname}${window.location.search}`;
+						const encodedUrl = encodeURIComponent(currentUrl);
+						
+						if (localStorage.token) {
+							// 获取会话用户信息
+							const sessionUser = await getSessionUser(localStorage.token).catch((error) => {
+								toast.error(`${error}`);
+								return null;
+							});
+							
+							if (sessionUser) {
+								// 保存会话用户到Store
+								$socket.emit('user-join', { auth: { token: sessionUser.token } });
+								
+								await user.set(sessionUser);
+								await config.set(await getBackendConfig());
+							} else {
+								// 重定向无效会话用户到/auth页面
+								localStorage.removeItem('token');
+								await goto(`/auth?redirect=${encodedUrl}`);
+							}
+						} else {
+							// 已经在auth页面则不重定向
+							if ($page.url.pathname !== '/auth') {
+								await goto(`/auth?redirect=${encodedUrl}`);
+							}
+						}
+					}
+					
+					backendConnecting = false;
+					loadingProgress.set(100); // 完成加载
+					return true;
+				}
+			} catch (error) {
+				console.error('Error connecting to backend:', error);
+				
+				// 检查是否需要重试
+				if (connectionAttempts < maxConnectionAttempts) {
+					toast.error(`连接后端失败，正在重试 (${connectionAttempts}/${maxConnectionAttempts})...`);
+					return await attemptConnection(); // 递归重试
+				} else {
+					// 达到最大重试次数
+					backendConnectionError = true;
+					backendConnecting = false;
+					return false;
+				}
+			}
+		};
+		
+		return await attemptConnection();
+	};
 
 	const setupSocket = async (enableWebsocket) => {
 		const _socket = io(`${WEBUI_BASE_URL}` || undefined, {
@@ -456,25 +551,25 @@
 			}
 		}
 
-		// Listen for messages on the BroadcastChannel
+		// 广播通道相关代码
 		bc.onmessage = (event) => {
 			if (event.data === 'active') {
-				isLastActiveTab.set(false); // Another tab became active
+				isLastActiveTab.set(false); // 另一个标签页已激活
 			}
 		};
 
-		// Set yourself as the last active tab when this tab is focused
+		// 设置自身为上一个活动标签页
 		const handleVisibilityChange = () => {
 			if (document.visibilityState === 'visible') {
-				isLastActiveTab.set(true); // This tab is now the active tab
-				bc.postMessage('active'); // Notify other tabs that this tab is active
+				isLastActiveTab.set(true); // 此标签页现在是活动标签页
+				bc.postMessage('active'); // 通知其他标签页此标签页已激活
 			}
 		};
 
-		// Add event listener for visibility state changes
+		// 添加可见性状态变化事件监听器
 		document.addEventListener('visibilitychange', handleVisibilityChange);
 
-		// Call visibility change handler initially to set state on load
+		// 初始调用可见性更改处理程序以设置加载时的状态
 		handleVisibilityChange();
 
 		theme.set(localStorage.theme);
@@ -489,82 +584,18 @@
 			}
 		};
 		window.addEventListener('resize', onResize);
-
-		user.subscribe((value) => {
-			if (value) {
-				$socket?.off('chat-events', chatEventHandler);
-				$socket?.off('channel-events', channelEventHandler);
-
-				$socket?.on('chat-events', chatEventHandler);
-				$socket?.on('channel-events', channelEventHandler);
-			} else {
-				$socket?.off('chat-events', chatEventHandler);
-				$socket?.off('channel-events', channelEventHandler);
-			}
-		});
-
-		let backendConfig = null;
-		try {
-			backendConfig = await getBackendConfig();
-			console.log('Backend config:', backendConfig);
-		} catch (error) {
-			console.error('Error loading backend config:', error);
-		}
-		// Initialize i18n even if we didn't get a backend config,
-		// so `/error` can show something that's not `undefined`.
-
+		
+		// 初始化 i18n，即使我们没有获得后端配置，
+		// 以便 `/error` 可以显示一些不是 `undefined` 的内容。
 		initI18n(localStorage?.locale);
-		if (!localStorage.locale) {
-			const languages = await getLanguages();
-			const browserLanguages = navigator.languages
-				? navigator.languages
-				: [navigator.language || navigator.userLanguage];
-			const lang = backendConfig.default_locale
-				? backendConfig.default_locale
-				: bestMatchingLanguage(languages, browserLanguages, 'en-US');
-			changeLanguage(lang);
-		}
-
-		if (backendConfig) {
-			// Save Backend Status to Store
-			await config.set(backendConfig);
-			await WEBUI_NAME.set(backendConfig.name);
-
-			if ($config) {
-				await setupSocket($config.features?.enable_websocket ?? true);
-
-				const currentUrl = `${window.location.pathname}${window.location.search}`;
-				const encodedUrl = encodeURIComponent(currentUrl);
-
-				if (localStorage.token) {
-					// Get Session User Info
-					const sessionUser = await getSessionUser(localStorage.token).catch((error) => {
-						toast.error(`${error}`);
-						return null;
-					});
-
-					if (sessionUser) {
-						// Save Session User to Store
-						$socket.emit('user-join', { auth: { token: sessionUser.token } });
-
-						await user.set(sessionUser);
-						await config.set(await getBackendConfig());
-					} else {
-						// Redirect Invalid Session User to /auth Page
-						localStorage.removeItem('token');
-						await goto(`/auth?redirect=${encodedUrl}`);
-					}
-				} else {
-					// Don't redirect if we're already on the auth page
-					// Needed because we pass in tokens from OAuth logins via URL fragments
-					if ($page.url.pathname !== '/auth') {
-						await goto(`/auth?redirect=${encodedUrl}`);
-					}
-				}
-			}
-		} else {
-			// Redirect to /error when Backend Not Detected
-			await goto(`/error`);
+		
+		// 尝试连接后端
+		const connected = await connectToBackend();
+		
+		if (!connected) {
+			// 如果连接失败且尝试次数用尽，不进行重定向
+			// 由UI显示错误状态
+			console.error('无法连接到后端');
 		}
 
 		await tick();
@@ -580,9 +611,7 @@
 					progressBar.style.width = `${value}%`;
 				}
 			});
-
-			await loadingProgress.set(100);
-
+			
 			document.getElementById('splash-screen')?.remove();
 
 			const audio = new Audio(`/audio/greeting.mp3`);
@@ -592,12 +621,11 @@
 			};
 
 			document.addEventListener('click', playAudio);
-
-			loaded = true;
 		} else {
 			document.getElementById('splash-screen')?.remove();
-			loaded = true;
 		}
+		
+		loaded = true;
 
 		return () => {
 			window.removeEventListener('resize', onResize);
@@ -627,6 +655,56 @@
 	{:else}
 		<slot />
 	{/if}
+{:else}
+	<!-- 添加加载和后端连接状态显示 -->
+	<div class="flex flex-col items-center justify-center h-screen bg-gradient-to-b from-gray-50 to-gray-100 dark:from-gray-900 dark:to-gray-800">
+		<img src="{WEBUI_BASE_URL}/static/logo.png" alt="Logo" class="w-24 h-24 mb-8" />
+		
+		{#if backendConnecting}
+			<div class="flex flex-col items-center">
+				<Loader class="w-8 h-8 text-blue-500 animate-spin mb-4" />
+				<p class="text-lg text-gray-700 dark:text-gray-300 font-medium mb-2">正在连接到服务器...</p>
+				<p class="text-sm text-gray-500 dark:text-gray-400">请稍候，我们正在尝试建立连接</p>
+				
+				<!-- 进度条 -->
+				<div class="w-64 h-2 bg-gray-200 dark:bg-gray-700 rounded-full mt-6">
+					<div class="h-full bg-blue-500 rounded-full transition-all duration-300" style="width: {$loadingProgress}%"></div>
+				</div>
+				<p class="text-xs text-gray-500 dark:text-gray-400 mt-2">连接尝试 {connectionAttempts}/{maxConnectionAttempts}</p>
+			</div>
+		{:else if backendConnectionError}
+			<div class="flex flex-col items-center">
+				<div class="w-16 h-16 flex items-center justify-center bg-red-100 dark:bg-red-900 rounded-full mb-4">
+					<svg xmlns="http://www.w3.org/2000/svg" class="w-8 h-8 text-red-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+						<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+					</svg>
+				</div>
+				<p class="text-lg text-gray-700 dark:text-gray-300 font-medium mb-2">无法连接到服务器</p>
+				<p class="text-sm text-gray-500 dark:text-gray-400 text-center max-w-md px-4">
+					我们无法连接到后端服务。请确保服务器正在运行，并且网络连接正常。
+				</p>
+				
+				<div class="mt-6 flex gap-4">
+					<button 
+						class="px-4 py-2 bg-blue-500 hover:bg-blue-600 text-white rounded-lg font-medium transition-colors"
+						on:click={() => {
+							connectToBackend();
+						}}
+					>
+						重试连接
+					</button>
+					
+					<a 
+						href="https://github.com/open-webui/open-webui#troubleshooting" 
+						target="_blank"
+						class="px-4 py-2 bg-gray-200 dark:bg-gray-700 hover:bg-gray-300 dark:hover:bg-gray-600 text-gray-700 dark:text-gray-300 rounded-lg font-medium transition-colors"
+					>
+						查看帮助
+					</a>
+				</div>
+			</div>
+		{/if}
+	</div>
 {/if}
 
 <Toaster
