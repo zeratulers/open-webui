@@ -35,7 +35,7 @@ from open_webui.env import (
 from fastapi import APIRouter, Depends, HTTPException, Request, status
 from pydantic import BaseModel, EmailStr
 from open_webui.utils.email import send_verification_email
-from open_webui.utils.email_code import store_email_code, verify_email_code
+from open_webui.utils.email_code import store_email_code, verify_email_code, need_captcha_for_email
 from open_webui.utils.captcha import create_captcha, verify_captcha
 from fastapi.responses import RedirectResponse, Response
 from open_webui.config import OPENID_PROVIDER_URL, ENABLE_OAUTH_SIGNUP, ENABLE_LDAP
@@ -136,29 +136,75 @@ async def get_captcha():
 
 class SendEmailBody(BaseModel):
     email: EmailStr
-    captcha_token: str
-    captcha_code: str
+    captcha_token: Optional[str] = None
+    captcha_code: Optional[str] = None
 
 # -------- 2. 发送邮箱验证码 ----------
 @router.post("/send_email_code")
 async def send_email_code(body: SendEmailBody):
-    if not verify_captcha(body.captcha_token, body.captcha_code):
-        raise HTTPException(status_code=400, detail="Captcha invalid")
+    # 检查是否需要图形验证码
+    needs_captcha = need_captcha_for_email(body.email)
+    
+    # 如果需要验证码但未提供或验证失败
+    if needs_captcha:
+        if not body.captcha_token or not body.captcha_code:
+            raise HTTPException(status_code=400, detail="Captcha required")
+        if not verify_captcha(body.captcha_token, body.captcha_code):
+            raise HTTPException(status_code=400, detail="Captcha invalid")
+    
     code = store_email_code(body.email)
     send_verification_email(body.email, code)
-    return {"success": True}
+    return {"success": True, "needs_captcha": needs_captcha}
 
 # -------- 3. 注册 ----------
 class RegisterBody(BaseModel):
     email: EmailStr
     password: str
     email_code: str
+    name: str
 
-@router.post("//register")
+@router.post("/register")
 async def register_user(body: RegisterBody):
     if not verify_email_code(body.email, body.email_code):
         raise HTTPException(status_code=400, detail="Invalid email code")
     # 之后沿用原有创建用户逻辑
+    # ...
+
+# -------- 4. 忘记密码 ----------
+class ResetPasswordBody(BaseModel):
+    email: EmailStr
+    email_code: str
+    new_password: str
+
+@router.post("/reset_password")
+async def reset_password(body: ResetPasswordBody):
+    # 验证邮箱验证码
+    if not verify_email_code(body.email, body.email_code):
+        raise HTTPException(status_code=400, detail="Invalid email code")
+    
+    # 查找用户
+    user = Users.get_user_by_email(body.email.lower())
+    if not user:
+        raise HTTPException(status_code=400, detail="User not found")
+    
+    # 更新密码
+    hashed = get_password_hash(body.new_password)
+    success = Auths.update_user_password_by_id(user.id, hashed)
+    
+    if not success:
+        raise HTTPException(status_code=500, detail="Failed to update password")
+    
+    return {"success": True}
+
+# -------- 5. 检查邮箱是否需要图形验证码 ----------
+class CheckEmailCaptchaBody(BaseModel):
+    email: EmailStr
+
+@router.post("/check_email_captcha")
+async def check_email_captcha(body: CheckEmailCaptchaBody):
+    needs_captcha = need_captcha_for_email(body.email)
+    return {"needs_captcha": needs_captcha}
+
 @router.post("/update/profile", response_model=UserResponse)
 async def update_profile(
     form_data: UpdateProfileForm, session_user=Depends(get_verified_user)

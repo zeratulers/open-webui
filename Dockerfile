@@ -31,6 +31,7 @@ RUN npm ci
 
 COPY . .
 ENV APP_BUILD_HASH=${BUILD_HASH}
+RUN npm install @tailwindcss/postcss --save-dev
 RUN npm run build
 
 ######## WebUI backend ########
