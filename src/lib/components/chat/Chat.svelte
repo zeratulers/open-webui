@@ -92,6 +92,8 @@
 	export let chatIdProp = '';
 
 	let loading = false;
+	let chatLoading = true;
+	let loadingStepMessage = $i18n.t('正在准备对话界面...');
 
 	const eventTarget = new EventTarget();
 	let controlPane;
@@ -142,6 +144,8 @@
 	$: if (chatIdProp) {
 		(async () => {
 			loading = true;
+			chatLoading = true;
+			loadingStepMessage = $i18n.t('正在加载对话历史...');
 			console.log(chatIdProp);
 
 			prompt = '';
@@ -152,8 +156,8 @@
 
 			if (chatIdProp && (await loadChat())) {
 				await tick();
-				loading = false;
-
+				loadingStepMessage = $i18n.t('正在处理对话内容...');
+				
 				if (localStorage.getItem(`chat-input-${chatIdProp}`)) {
 					try {
 						const input = JSON.parse(localStorage.getItem(`chat-input-${chatIdProp}`));
@@ -166,6 +170,9 @@
 					} catch (e) {}
 				}
 
+				await new Promise(resolve => setTimeout(resolve, 300)); // 短暂延迟确保动画效果
+				chatLoading = false;
+				loading = false;
 				window.setTimeout(() => scrollToBottom(), 0);
 				const chatInput = document.getElementById('chat-input');
 				chatInput?.focus();
@@ -1965,7 +1972,7 @@
 			/>
 		{/if}
 
-		<PaneGroup direction="horizontal" class="w-full h-full">
+		<PaneGroup direction="horizontal" class="w-full h-full expand-animation">
 			<Pane defaultSize={50} class="h-full flex relative max-w-full flex-col">
 				<Navbar
 					bind:this={navbarElement}
@@ -2138,9 +2145,33 @@
 			/>
 		</PaneGroup>
 	{:else if loading}
-		<div class=" flex items-center justify-center h-full w-full">
-			<div class="m-auto">
-				<Spinner />
+		<div class="flex items-center justify-center h-full w-full">
+			<div class="text-center">
+				<img
+					id="loading-logo"
+					src="/static/favicon.png"
+					alt="Logo"
+					class="w-16 h-16 mx-auto mb-4"
+				/>
+				<div class="flex items-center justify-center space-x-2">
+					<Spinner class="w-5 h-5" />
+					<span class="text-gray-600 dark:text-gray-300">{loadingStepMessage}</span>
+				</div>
+			</div>
+		</div>
+	{:else if chatLoading}
+		<div class="flex items-center justify-center h-full w-full">
+			<div class="text-center">
+				<img
+					id="loading-logo"
+					src="/static/favicon.png"
+					alt="Logo"
+					class="w-16 h-16 mx-auto mb-4"
+				/>
+				<div class="flex items-center justify-center space-x-2">
+					<Spinner class="w-5 h-5" />
+					<span class="text-gray-600 dark:text-gray-300">{loadingStepMessage}</span>
+				</div>
 			</div>
 		</div>
 	{/if}

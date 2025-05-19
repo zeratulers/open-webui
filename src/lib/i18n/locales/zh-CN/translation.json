@@ -1318,5 +1318,19 @@
 	"Your entire contribution will go directly to the plugin developer; Open WebUI does not take any percentage. However, the chosen funding platform might have its own fees.": "您的全部捐款将直接给到插件开发者，Open WebUI 不会收取任何比例。但众筹平台可能会有服务费、抽成。",
 	"Youtube": "YouTube",
 	"Youtube Language": "Youtube 语言",
-	"Youtube Proxy URL": "Youtube 代理 URL"
+	"Youtube Proxy URL": "Youtube 代理 URL",
+	"Welcome Back!": "欢迎回来！",
+	"Sign in to continue to ": "请登录以继续使用",
+	"Forgot Password?": "忘记密码？",
+	"Create Your Account": "创建账号",
+	"Join us and start exploring.": "加入我们，开启探索之旅。",
+	"Reset Your Password": "重置密码",
+	"Enter your email to reset your password.": "输入邮箱以重置密码。",
+	"Email Code": "邮箱验证码",
+	"Enter Email Code": "输入邮箱验证码",
+	"Enter Your New Password": "输入新密码",
+	"Reset Password": "重置密码",
+	"Back to Sign In": "返回登录",
+	"Enter your email": "输入您的邮箱",
+	"Enter your password": "输入您的密码"
 }

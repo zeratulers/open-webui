@@ -49,8 +49,8 @@
 				<div>
 					{$WEBUI_NAME}
 					{$i18n.t('Version')}
-					(<a href="https://github.com/U8F69/open-webui" target="_blank" style="color: unset"
-						>{$i18n.t('Second revision by U8F69')}</a
+					(<a href="https://github.com/zeratulers/open-webui" target="_blank" style="color: unset"
+						>{$i18n.t('Modified version by Zeratulers')}</a
 					>)
 				</div>
 			</div>
@@ -62,7 +62,7 @@
 						</Tooltip>
 
 						<a
-							href="https://github.com/U8F69/open-webui/releases/tag/v{version.latest}"
+							href="https://github.com/zeratulers/open-webui/releases/tag/v{version.latest}"
 							target="_blank"
 						>
 							{updateAvailable === null
@@ -134,10 +134,10 @@
 					/>
 				</a>
 
-				<a href="https://github.com/U8F69/open-webui" target="_blank">
+				<a href="https://github.com/zeratulers/open-webui" target="_blank">
 					<img
 						alt="Github Repo"
-						src="https://img.shields.io/github/stars/U8F69/open-webui?style=social&label=Star us on Github"
+						src="https://img.shields.io/github/stars/zeratulers/open-webui?style=social&label=Star us on Github"
 					/>
 				</a>
 			</div>
@@ -182,6 +182,28 @@ SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER
 CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY,
 OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+</pre>
+		</div>
+
+		<div>
+			<pre class="text-xs text-gray-400 dark:text-gray-500">
+DISCLAIMER AND PRIVACY NOTICE FOR THE MODIFIED VERSION:
+
+This is a modified version of the original Open WebUI project. While we strive to maintain the 
+quality and functionality of the original software, this modified version is provided "AS IS" 
+without any warranties. By using this software:
+
+1. You acknowledge that this is a modified fork based on the original Open WebUI project by 
+   Timothy Jaeryang Baek, distributed under the license terms stated above.
+
+2. PRIVACY NOTICE: This application may collect usage data for the sole purpose of improving 
+   functionality and user experience. No personally identifiable information is intentionally 
+   collected or shared with third parties without your explicit consent.
+
+3. The maintainers of this modified version assume no liability for any data loss, system damage,
+   or other issues that may arise from the use of this software.
+
+4. You agree to use this software at your own risk and discretion.
 </pre>
 		</div>
 

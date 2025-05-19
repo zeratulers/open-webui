@@ -50,6 +50,8 @@
 	const i18n = getContext('i18n');
 
 	let loaded = false;
+	let showInitialLoading = true;
+	let loadingStepMessage = $i18n.t('正在初始化...');
 	let DB = null;
 	let localDBChats = [];
 
@@ -59,6 +61,7 @@
 		if ($user === undefined || $user === null) {
 			await goto('/auth');
 		} else if (['user', 'admin'].includes($user?.role)) {
+			loadingStepMessage = $i18n.t('正在检查本地数据...');
 			try {
 				// Check if IndexedDB exists
 				DB = await openDB('Chats', 1);
@@ -81,6 +84,8 @@
 				console.error(error);
 				return null;
 			});
+
+			loadingStepMessage = $i18n.t('正在加载设置和模型...');
 
 			if (userSettings) {
 				settings.set(userSettings.ui);
@@ -106,6 +111,8 @@
 			banners.set(await getBanners(localStorage.token));
 			tools.set(await getTools(localStorage.token));
 			toolServers.set(await getToolServersData($i18n, $settings?.toolServers ?? []));
+
+			loadingStepMessage = $i18n.t('正在设置界面...');
 
 			document.addEventListener('keydown', async function (event) {
 				const isCtrlPressed = event.ctrlKey || event.metaKey; // metaKey is for Cmd key on Mac
@@ -224,6 +231,7 @@
 		}
 
 		loaded = true;
+		showInitialLoading = false;
 	});
 
 	const checkForVersionUpdates = async () => {
@@ -236,7 +244,40 @@
 	};
 </script>
 
-<SettingsModal bind:show={$showSettings} />
+{#if showInitialLoading}
+	<div class="fixed inset-0 flex items-center justify-center bg-white dark:bg-gray-900 z-50">
+		<div class="text-center">
+			<img
+				id="app-logo"
+				src="/static/favicon.png"
+				alt="Logo"
+				class="w-16 h-16 mx-auto mb-4"
+			/>
+			<div class="flex items-center justify-center space-x-2">
+				<Spinner class="w-5 h-5" />
+				<span class="text-gray-600 dark:text-gray-300">{loadingStepMessage}</span>
+			</div>
+		</div>
+	</div>
+{/if}
+
+{#if loaded}
+<div class="flex h-[100dvh] max-h-[100dvh] w-full overflow-hidden font-primary" class:select-none={$settings?.disableAutoSelect ?? false}>
+	{#if $user?.role === 'pending'}
+		<AccountPending />
+	{:else}
+		<div class="flex flex-1 flex-col w-full h-full overflow-hidden">
+			<Sidebar DB={DB} localDBChats={localDBChats} />
+
+			<div class="flex flex-col flex-1 h-full w-full overflow-hidden expand-animation">
+				<slot />
+			</div>
+		</div>
+	{/if}
+</div>
+{/if}
+
+<SettingsModal open={$showSettings} />
 <ChangelogModal bind:show={$showChangelog} />
 
 {#if version && compareVersion(version.latest, version.current) && ($settings?.showUpdateToast ?? true)}
@@ -250,78 +291,6 @@
 		/>
 	</div>
 {/if}
-
-<div class="app relative">
-	<div
-		class=" text-gray-700 dark:text-gray-100 bg-white dark:bg-gray-900 h-screen max-h-[100dvh] overflow-auto flex flex-row justify-end"
-	>
-		{#if !['user', 'admin'].includes($user?.role)}
-			<AccountPending />
-		{:else if localDBChats.length > 0}
-			<div class="fixed w-full h-full flex z-50">
-				<div
-					class="absolute w-full h-full backdrop-blur-md bg-white/20 dark:bg-gray-900/50 flex justify-center"
-				>
-					<div class="m-auto pb-44 flex flex-col justify-center">
-						<div class="max-w-md">
-							<div class="text-center dark:text-white text-2xl font-medium z-50">
-								Important Update<br /> Action Required for Chat Log Storage
-							</div>
-
-							<div class=" mt-4 text-center text-sm dark:text-gray-200 w-full">
-								{$i18n.t(
-									"Saving chat logs directly to your browser's storage is no longer supported. Please take a moment to download and delete your chat logs by clicking the button below. Don't worry, you can easily re-import your chat logs to the backend through"
-								)}
-								<span class="font-semibold dark:text-white"
-									>{$i18n.t('Settings')} > {$i18n.t('Chats')} > {$i18n.t('Import Chats')}</span
-								>. {$i18n.t(
-									'This ensures that your valuable conversations are securely saved to your backend database. Thank you!'
-								)}
-							</div>
-
-							<div class=" mt-6 mx-auto relative group w-fit">
-								<button
-									class="relative z-20 flex px-5 py-2 rounded-full bg-white border border-gray-100 dark:border-none hover:bg-gray-100 transition font-medium text-sm"
-									on:click={async () => {
-										let blob = new Blob([JSON.stringify(localDBChats)], {
-											type: 'application/json'
-										});
-										saveAs(blob, `chat-export-${Date.now()}.json`);
-
-										const tx = DB.transaction('chats', 'readwrite');
-										await Promise.all([tx.store.clear(), tx.done]);
-										await deleteDB('Chats');
-
-										localDBChats = [];
-									}}
-								>
-									Download & Delete
-								</button>
-
-								<button
-									class="text-xs text-center w-full mt-2 text-gray-400 underline"
-									on:click={async () => {
-										localDBChats = [];
-									}}>{$i18n.t('Close')}</button
-								>
-							</div>
-						</div>
-					</div>
-				</div>
-			</div>
-		{/if}
-
-		<Sidebar />
-
-		{#if loaded}
-			<slot />
-		{:else}
-			<div class="w-full flex-1 h-full flex items-center justify-center">
-				<Spinner />
-			</div>
-		{/if}
-	</div>
-</div>
 
 <style>
 	.loading {

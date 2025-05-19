@@ -15,6 +15,7 @@
 
 	import Spinner from '$lib/components/common/Spinner.svelte';
 	import OnBoarding from '$lib/components/OnBoarding.svelte';
+	import { fade } from 'svelte/transition';
 	
 
 	const i18n = getContext('i18n');
@@ -294,7 +295,7 @@
 		await checkOauthCallback();
 
 		// It's important to get the config first to check features.
-		loadingStepMessage = $i18n.t('Loading backend configuration...');
+		loadingStepMessage = $i18n.t('Loading configuration...');
 		try {
 			const backendConfig = await getBackendConfig();
 			config.set(backendConfig); // Set config early
@@ -344,8 +345,19 @@
 </svelte:head>
 
 {#if showInitialLoading}
-	<div class="fixed inset-0 flex items-center justify-center bg-white dark:bg-black z-[100]">
-		<Spinner size="xl" /> <span class="ml-3 text-lg dark:text-white">{loadingStepMessage || $i18n.t('Loading...')}</span>
+	<div class="fixed inset-0 flex items-center justify-center bg-white dark:bg-gray-900">
+		<div class="text-center">
+			<img
+				id="logo"
+				src="/static/favicon.png"
+				alt="Logo"
+				class="w-16 h-16 mx-auto mb-4"
+			/>
+			<div class="flex items-center justify-center space-x-2">
+				<Spinner class="w-5 h-5" />
+				<span class="text-gray-600 dark:text-gray-300">{loadingStepMessage}</span>
+			</div>
+		</div>
 	</div>
 {/if}
 
@@ -377,7 +389,7 @@
 		<div
 			class="min-h-screen w-full flex items-center justify-center p-4 font-primary z-40"
 		>
-			<div class="w-full max-w-md bg-white dark:bg-gray-800 shadow-2xl rounded-xl p-6 md:p-10 transform transition-all duration-500 ease-in-out">
+			<div class="w-full max-w-md bg-white dark:bg-gray-800 shadow-2xl rounded-xl p-6 md:p-10 transform transition-all duration-500 ease-in-out expand-animation">
 				{#if ($config?.features.auth_trusted_header ?? false) || $config?.features.auth === false}
 					<div class=" my-auto py-10 w-full text-center">
 						<div
@@ -774,6 +786,14 @@
 	{/if}
 </div>
 
+<!-- 页面底部 Logo 和 GitHub 链接 -->
+<footer class="fixed bottom-0 w-full flex justify-center items-center py-4">
+  <a href="https://github.com/open-webui/open-webui" target="_blank" rel="noopener" class="flex items-center space-x-2 opacity-70 hover:opacity-100 transition">
+    <img src="/static/logo.png" alt="Open WebUI" class="w-6 h-6" />
+    <span class="text-sm text-gray-500 dark:text-gray-400">Open WebUI</span>
+  </a>
+</footer>
+
 <style lang="postcss">
 	.input {
 		@apply w-full px-4 py-2.5 text-sm border border-gray-300 rounded-lg shadow-sm bg-gray-50 dark:bg-gray-700 dark:border-gray-600 dark:text-white focus:ring-purple-500 focus:border-purple-500 dark:focus:ring-purple-500 dark:focus:border-purple-500 transition-colors duration-200;
@@ -782,12 +802,12 @@
 		@apply py-2.5 px-5 text-sm font-medium rounded-lg transition-all duration-200 ease-in-out focus:outline-none focus:ring-2 focus:ring-offset-2 dark:focus:ring-offset-gray-800;
 	}
 	.btn-primary {
-		@apply text-white bg-purple-600 hover:bg-purple-700 focus:ring-purple-500;
+		@apply text-white bg-purple-600 hover:bg-purple-700 shadow-md hover:shadow-lg focus:ring-purple-500 hover:-translate-y-0.5;
 	}
 	.btn-secondary {
-		@apply text-purple-700 bg-purple-100 hover:bg-purple-200 dark:text-purple-300 dark:bg-purple-700 dark:hover:bg-purple-600 focus:ring-purple-500;
+		@apply text-purple-700 bg-purple-100 hover:bg-purple-200 shadow hover:shadow-md dark:text-purple-300 dark:bg-purple-700 dark:hover:bg-purple-600 focus:ring-purple-500 hover:-translate-y-0.5;
 	}
 	.btn-outline {
-		@apply text-gray-700 bg-white border border-gray-300 hover:bg-gray-50 dark:text-gray-300 dark:bg-gray-700 dark:border-gray-600 dark:hover:bg-gray-600 focus:ring-gray-300 dark:focus:ring-gray-500;
+		@apply text-gray-700 bg-white border border-gray-300 hover:bg-gray-50 shadow hover:shadow-md dark:text-gray-300 dark:bg-gray-700 dark:border-gray-600 dark:hover:bg-gray-600 focus:ring-gray-300 dark:focus:ring-gray-500 hover:-translate-y-0.5;
 	}
 </style>

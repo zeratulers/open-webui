@@ -173,6 +173,21 @@ select {
 	}
 }
 
+@keyframes expandFromCenter {
+	0% {
+		opacity: 0;
+		transform: scale(0.8);
+	}
+	100% {
+		opacity: 1;
+		transform: scale(1);
+	}
+}
+
+.expand-animation {
+	animation: expandFromCenter 0.5s ease-out forwards;
+}
+
 .status-description {
 	animation: smoothFadeIn 0.2s forwards;
 }
@@ -203,8 +218,23 @@ select {
 }
 
 .scrollbar-none {
-	-ms-overflow-style: none; /* IE and Edge */
-	scrollbar-width: none; /* Firefox */
+	-ms-overflow-style: none; /* for IE and Edge */
+	scrollbar-width: none; /* for Firefox */
+}
+
+/* 优化输入框样式，去除选中时的黑色边框 */
+input:focus, textarea:focus {
+	outline: none !important;
+	box-shadow: 0 0 0 1px rgba(167, 139, 250, 0.3) !important; /* 轻微紫色高亮 */
+	border-color: rgba(167, 139, 250, 0.5) !important;
+	transition: all 0.2s ease;
+}
+
+/* 聊天输入框的样式 - 纯光标无边框特效 */
+.chat-input:focus {
+	outline: none !important;
+	box-shadow: none !important;
+	border-color: rgba(229, 231, 235, 0.5) !important;
 }
 
 input::-webkit-outer-spin-button,
